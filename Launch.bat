@@ -1,1 +1,1 @@
-powershell ./Script.ps1
+powershell .\Script.ps1
