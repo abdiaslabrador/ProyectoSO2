@@ -114,9 +114,7 @@ Function Stop
 Function Info
 {
     param($CPUMin,$RAMMin)
-    if($CPUMin -eq 0.0 -and $RAMMin -eq 0.0)
-    {filter OK {if( $_.RAM -ge $RAMMin -and $_.CPU -ge $CPUMin){$_}}}
-    else{filter OK {if( $_.RAM -gt $RAMMin -and $_.CPU -gt $CPUMin){$_}}}
+    filter OK {if(($_.RAM -gt $RAMMin -or $RAMMin -eq 0.0) -and ($_.CPU -gt $CPUMin -or $CPUMin -eq 0.0)){$_}}
     return (GET_STAMP | OK);
 }
 
