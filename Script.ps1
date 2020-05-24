@@ -114,7 +114,10 @@ Function Stop
 Function Info
 {
     param($CPUMin,$RAMMin)
-    filter OK {if(($_.RAM -gt $RAMMin -or $RAMMin -eq 0.0) -and ($_.CPU -gt $CPUMin -or $CPUMin -eq 0.0)){$_}}
+    filter OK {
+    if( ($_.RAM -gt $RAMMin -or ($_.RAM -ne $null -and $RAMMin -eq 0.0)) -and 
+    (    $_.CPU -gt $CPUMin -or ($_.CPU -ne $null -and $CPUMin -eq 0.0)) )
+    {$_}}
     return (GET_STAMP | OK);
 }
 
@@ -122,7 +125,7 @@ Function GET_DATA
 {   #Boton selector
     param($mode)
     $Object = $null
-    if($mode -eq 0){$Object = (Info 0.0 0.0); return $Object}  #todos los procesos
+    if($mode -eq 0){$Object = (Info 0.0 0); return $Object}  #todos los procesos
     if($mode -eq 1){$Object = (Info 10.0 0.0); return $Object} #procesos cpu con con uso de 10%cpu
     if($mode -eq 2){$Object = (Info 0.0 8.0); return $Object}  #procesos memoria con consumo de 8%ram
     if($mode -eq 3){$Object = (Stop(Info 10.0 8.0)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
