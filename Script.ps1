@@ -85,20 +85,48 @@ function GET_STAMP
     $gp = gps | ? {$_.mainwindowtitle.length -ne 0} | where-object {$nombres_de_windows -notcontains $_.ProcessName}
     foreach($x in $gp){$global:ArrayList.add($x.Id)}
 
-    $gp = Get-WmiObject Win32_PerfFormattedData_PerfProc_Process | where-object{
-    $global:ArrayList -eq $_.IDProcess
-    }
-    $global:ArrayList.Clear()
+    $programs = @{}
+    $g = Get-WmiObject Win32_PerfFormattedData_PerfProc_Process  | Where-Object { $_.name -inotmatch '_total|idle' }
 
-    $w= $gp | foreach-object{  
-        $tmp=@{
-            PID=$_.IDProcess;
-            Nombre=$_.Name;
-            RAM= [math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
-            CPU= $_.PercentProcessorTime;
+    foreach($j in $g)
+    {
+        foreach($k in $gp)
+        {
+           if($j.Name.equals($k.ProcessName) -or $j.Name.contains($k.ProcessName+"#"))
+           {
+               #"Process={0,-25} CPU_Usage={1,-12} Memory_Usage_(MB)={2,-16}" -f `
+               #$j.Name,$j.PercentProcessorTime,([math]::Round($j.WorkingSetPrivate/1Mb,2))
+               if($programs[$k.ProcessName] -eq $null)
+                {
+                     $programs.Add(
+                                    $k.ProcessName,  @{
+                                                        name = ($k.ProcessName);
+                                                        id   = ($k.Id);
+                                                        memory = ($j.WorkingSetPrivate);
+                                                        processor = ($j.PercentProcessorTime)
+                                           }
+                                   )
+                }
+                else
+                {
+                    $programs[$k.ProcessName].memory+=($j.WorkingSetPrivate)
+                }
+           }
         }
+    }
+
+    $w= $gp | foreach-object{
+      
+        
+        $tmp=@{
+            PID=$_.Id;
+            Nombre=$programs[$_.ProcessName].name;
+            RAM= ([math]::Round((($programs[$_.ProcessName].memory/1mb )),3))#$global:rambyte
+            CPU= $programs[$_.ProcessName].processor;
+            }
         New-Object -TypeName PSObject -prop $tmp;
-    }    
+      }
+
     return $w
 }
 
@@ -115,9 +143,11 @@ Function Info
 {
     param($CPUMin,$RAMMin)
     filter OK {
-    if( ($_.RAM -gt $RAMMin -or ($_.RAM -ne $null -and $RAMMin -eq 0.0)) -and 
-    (    $_.CPU -gt $CPUMin -or ($_.CPU -ne $null -and $CPUMin -eq 0.0)) )
-    {$_}}
+            if( ($_.RAM -gt $RAMMin -or ($_.RAM -ne $null -and $RAMMin -eq 0.0)) -and 
+            (    $_.CPU -gt $CPUMin -or ($_.CPU -ne $null -and $CPUMin -eq 0.0)) )
+            {$_}
+    }
+
     return (GET_STAMP | OK);
 }
 
@@ -125,7 +155,7 @@ Function GET_DATA
 {   #Boton selector
     param($mode)
     $Object = $null
-    if($mode -eq 0){$Object = (Info 0.0 0); return $Object}  #todos los procesos
+    if($mode -eq 0){$Object = (Info 0.0 0.0); return $Object}  #todos los procesos
     if($mode -eq 1){$Object = (Info 10.0 0.0); return $Object} #procesos cpu con con uso de 10%cpu
     if($mode -eq 2){$Object = (Info 0.0 8.0); return $Object}  #procesos memoria con consumo de 8%ram
     if($mode -eq 3){$Object = (Stop(Info 10.0 8.0)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
