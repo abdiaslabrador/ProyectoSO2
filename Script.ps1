@@ -23,7 +23,7 @@ $texbox.ScrollBars = "Vertical"
 $main_form.Controls.Add($texbox)
 #--------------------------------------------------------
 
-$global:MODE=0
+$global:MODE=0;
 $global:CURPID=0;
 
 #Botones 
@@ -39,10 +39,9 @@ $Buttoncpu = New-Object System.Windows.Forms.Button
 $Buttoncpu.Location = New-Object System.Drawing.Size(140,10)
 $Buttoncpu.Size = New-Object System.Drawing.Size(120,23)
 $Buttoncpu.Text = "CPU > 10%"
-
 $main_form.Controls.Add($Buttoncpu)
-
 $Buttoncpu.Add_Click({$global:MODE=1})
+
 $Buttonmem = New-Object System.Windows.Forms.Button
 $Buttonmem.Location = New-Object System.Drawing.Size(270,10)
 $Buttonmem.Size = New-Object System.Drawing.Size(120,23)
@@ -80,10 +79,9 @@ $global:ArrayList = New-Object System.Collections.ArrayList
 $global:pwshv = ((Get-Host).Version.Major)
 $global:rambyte =((Get-WmiObject Win32_ComputerSystem).totalphysicalmemory)
 
-function GET_STAMP
+Function GET_STAMP
 {
     $gp = gps | ? {$_.mainwindowtitle.length -ne 0} | where-object {$nombres_de_windows -notcontains $_.ProcessName}
-    foreach($x in $gp){$global:ArrayList.add($x.Id)}
 
     $programs = @{}
     $g = Get-WmiObject Win32_PerfFormattedData_PerfProc_Process  | Where-Object { $_.name -inotmatch '_total|idle' }
@@ -115,17 +113,17 @@ function GET_STAMP
         }
     }
 
-    $w= $gp | foreach-object{
-      
-        
+    $w= $gp | foreach-object{ 
+    if($_.Name -eq "notepad" -or $_.Name -eq "Chrome"){$c=10.0; $r=10.0;}
+    else{$c=5.0; $r=6.0;}  
         $tmp=@{
-            PID=$_.Id;
-            Nombre=$programs[$_.ProcessName].name;
-            RAM= ([math]::Round((($programs[$_.ProcessName].memory/1mb )),3))#$global:rambyte
-            CPU= $programs[$_.ProcessName].processor;
-            }
+            PID=$_.IDProcess;
+            Nombre=$_.Name;
+            RAM= $r;#[math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
+            CPU= $c;#$_.PercentProcessorTime;
+        }
         New-Object -TypeName PSObject -prop $tmp;
-      }
+    }  
 
     return $w
 }
@@ -141,24 +139,31 @@ Function Stop
 
 Function Info
 {
-    param($CPUMin,$RAMMin)
-    filter OK {
-            if( ($_.RAM -gt $RAMMin -or ($_.RAM -ne $null -and $RAMMin -eq 0.0)) -and 
-            (    $_.CPU -gt $CPUMin -or ($_.CPU -ne $null -and $CPUMin -eq 0.0)) )
-            {$_}
+    param($numero)
+    if($numero -eq 0)
+    {
+        return (GET_STAMP);    
     }
-
-    return (GET_STAMP | OK);
+    if($numero -eq 1)
+    {  
+        return (get_stamp | where-object {$_.cpu -gt 10})
+    }
+    if($numero -eq 2)
+    {  
+        return (get_stamp | where-object {$_.ram -gt 2})
+    }
+    
 }
+
 
 Function GET_DATA
 {   #Boton selector
     param($mode)
     $Object = $null
-    if($mode -eq 0){$Object = (Info 0.0 0.0); return $Object}  #todos los procesos
-    if($mode -eq 1){$Object = (Info 10.0 0.0); return $Object} #procesos cpu con con uso de 10%cpu
-    if($mode -eq 2){$Object = (Info 0.0 8.0); return $Object}  #procesos memoria con consumo de 8%ram
-    if($mode -eq 3){$Object = (Stop(Info 10.0 8.0)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
+    if($mode -eq 0){ $Object = (Info $mode); return  $Object}  #todos los procesos
+    if($mode -eq 1){ $Object = (Info $mode); write-host $Object; return $Object} #procesos cpu con con uso de 10%cpu
+    if($mode -eq 2){ $Object = (Info $mode);  write-host $Object; return $Object}  #procesos memoria con consumo de 8%ram
+    if($mode -eq 3){ $Object = (Stop(Info $mode)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
 }
 
 $global:currentIndex=0;
