@@ -114,13 +114,21 @@ Function GET_STAMP
     }
 
     $w= $gp | foreach-object{ 
-    if($_.Name -eq "notepad" -or $_.Name -eq "Chrome"){$c=10.0; $r=10.0;}
-    else{$c=5.0; $r=6.0;}  
+    	if($_.Name -eq "notepad")
+       {
+            $c=10.0; 
+            $r=10.0;
+       }
+        else
+       {
+            $c=1.0;
+            $r=1.0;
+       }
         $tmp=@{
-            PID=$_.IDProcess;
+            PID=$_.Id;
             Nombre=$_.Name;
-            RAM= $r;#[math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
-            CPU= $c;#$_.PercentProcessorTime;
+            RAM= $c;#[math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
+            CPU= $r;#$_.PercentProcessorTime;
         }
         New-Object -TypeName PSObject -prop $tmp;
     }  
@@ -144,13 +152,17 @@ Function Info
     {
         return (GET_STAMP);    
     }
-    if($numero -eq 1)
+    elseif($numero -eq 1)
     {  
-        return (get_stamp | where-object {$_.cpu -gt 10})
+        return (GET_STAMP | where-object {$_.CPU -gt 2.0})
     }
-    if($numero -eq 2)
+    elseif($numero -eq 2)
     {  
-        return (get_stamp | where-object {$_.ram -gt 2})
+        return (GET_STAMP | where-object {$_.RAM -gt 2.0})
+    }
+    else
+    {
+	return (GET_STAMP | where-object {$_.RAM -gt 8.0 -and $_.CPU -gt 10.0})
     }
     
 }
@@ -160,9 +172,9 @@ Function GET_DATA
 {   #Boton selector
     param($mode)
     $Object = $null
-    if($mode -eq 0){ $Object = (Info $mode); return  $Object}  #todos los procesos
-    if($mode -eq 1){ $Object = (Info $mode); write-host $Object; return $Object} #procesos cpu con con uso de 10%cpu
-    if($mode -eq 2){ $Object = (Info $mode);  write-host $Object; return $Object}  #procesos memoria con consumo de 8%ram
+    if($mode -eq 0){ $Object = (Info $mode); write-host $Object; return  $Object}  #todos los procesos
+    if($mode -eq 1){ $Object = (Info $mode); write-host $Object; return  $Object}  #procesos cpu con con uso de 10%cpu
+    if($mode -eq 2){ $Object = (Info $mode); write-host $Object; return  $Object}  #procesos memoria con consumo de 8%ram
     if($mode -eq 3){ $Object = (Stop(Info $mode)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
 }
 
