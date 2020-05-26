@@ -82,23 +82,25 @@ $global:rambyte =((Get-WmiObject Win32_ComputerSystem).totalphysicalmemory)
 
 function GET_STAMP
 {
-    $gp = gps | ? {$_.mainwindowtitle.length -ne 0} | where-object {$nombres_de_windows -notcontains $_.ProcessName}
-    foreach($x in $gp){$global:ArrayList.add($x.Id)}
+    $gp = gps | ? {$_.mainwindowtitle.length -ne 0} | where-object {$nombres_de_windows -notcontains $_.ProcessName}| foreach-object {$global:ArrayList.add($_.Id)}
 
     $gp = Get-WmiObject Win32_PerfFormattedData_PerfProc_Process | where-object{
     $global:ArrayList -eq $_.IDProcess
     }
     $global:ArrayList.Clear()
 
-    $w= $gp | foreach-object{  
+    $w= $gp | foreach-object{ 
+    if($_.Name -eq "notepad"){$c=0.0; $r=20.0;}
+    elseif($_.Name -eq "Chrome"){$c=20.0; $r=0.0;}
+    else{$c=5.0; $r=6.0;}  
         $tmp=@{
             PID=$_.IDProcess;
             Nombre=$_.Name;
-            RAM= [math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
-            CPU= $_.PercentProcessorTime;
+            RAM= $r;#[math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
+            CPU= $c;#$_.PercentProcessorTime;
         }
         New-Object -TypeName PSObject -prop $tmp;
-    }    
+    }  
     return $w
 }
 
@@ -113,22 +115,34 @@ Function Stop
 
 Function Info
 {
-    param($CPUMin,$RAMMin)
-    filter OK {
-    if( ($_.RAM -gt $RAMMin -or ($_.RAM -ne $null -and $RAMMin -eq 0.0)) -and 
-    (    $_.CPU -gt $CPUMin -or ($_.CPU -ne $null -and $CPUMin -eq 0.0)) )
-    {$_}}
-    return (GET_STAMP | OK);
+    param($numero)
+    if($numero -eq 0)
+    {
+        return (GET_STAMP);    
+    }
+    elseif($numero -eq 1)
+    {  
+        return (get_stamp | where-object {$_.cpu -gt 10})
+    }
+    elseif($numero -eq 2)
+    {  
+        return (get_stamp | where-object {$_.ram -gt 10})
+    }
+    elseif($numero -eq 3)
+    {  
+        return (get_stamp | where-object {$_.ram -gt 2 -and $_.CPU -gt 10})
+    }
+    
 }
 
 Function GET_DATA
 {   #Boton selector
     param($mode)
     $Object = $null
-    if($mode -eq 0){$Object = (Info 0.0 0); return $Object}  #todos los procesos
-    if($mode -eq 1){$Object = (Info 10.0 0.0); return $Object} #procesos cpu con con uso de 10%cpu
-    if($mode -eq 2){$Object = (Info 0.0 8.0); return $Object}  #procesos memoria con consumo de 8%ram
-    if($mode -eq 3){$Object = (Stop(Info 10.0 8.0)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
+    if($mode -eq 0){ $Object = (Info $mode);  return  $Object}  #todos los procesos
+    if($mode -eq 1){ $Object = (Info $mode);  return $Object} #procesos cpu con con uso de 10%cpu
+    if($mode -eq 2){ $Object = (Info $mode); write-host "este es object " $Object; return $Object}  #procesos memoria con consumo de 8%ram
+    if($mode -eq 3){ $Object = (Stop(Info $mode)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
 }
 
 $global:currentIndex=0;
@@ -145,11 +159,24 @@ $DATA = GET_DATA($global:MODE)
 Function Update()
 {
    $DATA = GET_DATA($global:MODE)
+
 try{
     $global:currentIndex = $texbox.CurrentRow.Index;
     $currentCol = $texbox.CurrentCol.Index;
-    $currentRow = $texbox.FirstDisplayedScrollingRowIndex;    
-    $texbox.datasource = [collections.arraylist]$DATA;
+    $currentRow = $texbox.FirstDisplayedScrollingRowIndex;
+    if($DATA.GetType().Name -eq "PSCustomObject")
+    {
+
+        [Collections.ArrayList]$DATA = @($DATA |
+        Where-Object {$_.Nombre -eq $DATA.Nombre} |
+        Select-Object Nombre, PID, RAM, CPU)
+    }
+    else
+    {
+        $DATA =[Collections.ArrayList]$DATA
+    }
+    $texbox.datasource = $DATA;
+    write-host "este es mode " $global:mode  "este es la data "  $texbox.datasource;
     $texbox.CurrentCell = $texbox.Rows[$global:currentIndex].Cells[0];
     $texbox.FirstDisplayedScrollingRowIndex = $currentRow;  
     $texbox.update();
