@@ -177,7 +177,7 @@ $timer.Interval = 2000
 $timer.add_tick({Update})  
 $timer.start()
 
-$DATA = GET_DATA($global:MODE)
+
 
 Function Update()
 {
