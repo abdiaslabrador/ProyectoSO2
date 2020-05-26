@@ -82,7 +82,7 @@ $global:rambyte =((Get-WmiObject Win32_ComputerSystem).totalphysicalmemory)
 
 function GET_STAMP
 {
-    $gp = gps | ? {$_.mainwindowtitle.length -ne 0} | where-object {$nombres_de_windows -notcontains $_.ProcessName}| foreach-object {$global:ArrayList.add($_.Id)}
+    $gp = gps | ? {$_.mainwindowtitle.length -ne 0} | where-object {$nombres_de_windows -notcontains $_.ProcessName}|   foreach-object {$global:ArrayList.add($_.Id)}
 
     $gp = Get-WmiObject Win32_PerfFormattedData_PerfProc_Process | where-object{
     $global:ArrayList -eq $_.IDProcess
@@ -140,7 +140,7 @@ Function GET_DATA
     param($mode)
     $Object = $null
     if($mode -eq 0){ $Object = (Info $mode);  return  $Object}  #todos los procesos
-    if($mode -eq 1){ $Object = (Info $mode);  return $Object} #procesos cpu con con uso de 10%cpu
+    if($mode -eq 1){ $Object = (Info $mode); write-host "este es object " $Object; return $Object} #procesos cpu con con uso de 10%cpu
     if($mode -eq 2){ $Object = (Info $mode); write-host "este es object " $Object; return $Object}  #procesos memoria con consumo de 8%ram
     if($mode -eq 3){ $Object = (Stop(Info $mode)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
 }
@@ -164,16 +164,20 @@ try{
     $global:currentIndex = $texbox.CurrentRow.Index;
     $currentCol = $texbox.CurrentCol.Index;
     $currentRow = $texbox.FirstDisplayedScrollingRowIndex;
-    if($DATA.GetType().Name -eq "PSCustomObject")
-    {
+   if($DATA -eq $null)
+   {
+        $DATA;
+   }
+   elseif($DATA.GetType().Name -eq "PSCustomObject")
+   {
 
-        [Collections.ArrayList]$DATA = @($DATA |
-        Where-Object {$_.Nombre -eq $DATA.Nombre} |
-        Select-Object Nombre, PID, RAM, CPU)
+        [Collections.ArrayList]$DATA = @($DATA |Where-Object {$_.Nombre -eq $DATA.Nombre} |Select-Object Nombre, PID, RAM, CPU);
+        write-host "este es DATA " $DATA;
     }
     else
     {
-        $DATA =[Collections.ArrayList]$DATA
+        $DATA =[Collections.ArrayList]$DATA;
+    write-host "este es DATA " $DATA;   
     }
     $texbox.datasource = $DATA;
     write-host "este es mode " $global:mode  "este es la data "  $texbox.datasource;
