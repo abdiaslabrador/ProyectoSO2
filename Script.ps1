@@ -71,10 +71,7 @@ $main_form.Controls.Add($Buttonb)
 $Buttonb.Add_Click({$global:MODE=3})
 
 #--------------------------------------------------------
-$nombres_de_windows=  "powershell", "cmd","ApplicationFrameHost", "MicrosoftEdge",
-"WindowsInternal", "WinStore.App","SystemSettings", 
-"WindowsInternal.ComposableShell.Experiences.TextInput.InputApp", 
-"MicrosoftEdgeCP", "MicrosoftEdge"
+$nombres_de_windows=   "cmd","ApplicationFrameHost", "MicrosoftEdge","WindowsInternal", "WinStore.App","SystemSettings", "WindowsInternal.ComposableShell.Experiences.TextInput.InputApp", "Video.UI", "Music.UI","MicrosoftEdgeCP", "MicrosoftEdge", "Calculator"
 $global:ArrayList = New-Object System.Collections.ArrayList
 
 $global:pwshv = ((Get-Host).Version.Major)
@@ -82,8 +79,7 @@ $global:rambyte =((Get-WmiObject Win32_ComputerSystem).totalphysicalmemory)
 
 function GET_STAMP
 {
-    $gp = gps | ? {$_.mainwindowtitle.length -ne 0} | where-object {$nombres_de_windows -notcontains $_.ProcessName}
-
+    $gp = gps | ? {$_.mainwindowtitle.length -ne 0} | where-object {$nombres_de_windows -notcontains $_.ProcessName} | Group-Object -Property Name
     $programs = @{}
     $g = Get-WmiObject Win32_PerfFormattedData_PerfProc_Process  | Where-Object { $_.name -inotmatch '_total|idle' }
 
@@ -91,15 +87,15 @@ function GET_STAMP
     {
         foreach($k in $gp)
         {
-           if($j.Name.equals($k.ProcessName) -or $j.Name.contains($k.ProcessName+"#"))
+           if($j.Name.equals($k.Name) -or $j.Name.contains($k.Name+"#"))
            {
                #"Process={0,-25} CPU_Usage={1,-12} Memory_Usage_(MB)={2,-16}" -f `
                #$j.Name,$j.PercentProcessorTime,([math]::Round($j.WorkingSetPrivate/1Mb,2))
-               if($programs[$k.ProcessName] -eq $null)
+               if($programs[$k.Name] -eq $null)
                 {
                      $programs.Add(
-                                    $k.ProcessName,  @{
-                                                        name = ($k.ProcessName);
+                                    $k.Name,  @{
+                                                        name = ($k.Name);
                                                         id   = ($k.Id);
                                                         memory = ($j.WorkingSetPrivate);
                                                         processor = ($j.PercentProcessorTime)
@@ -108,18 +104,18 @@ function GET_STAMP
                 }
                 else
                 {
-                    $programs[$k.ProcessName].memory+=($j.WorkingSetPrivate)
+                    $programs[$k.Name].memory+=($j.WorkingSetPrivate)
                 }
            }
         }
     }
 
-    $w= $gp | foreach-object{ 
+        $w= $gp | foreach-object{ 
         $tmp=@{
-            PID=    $programs[$_.ProcessName].id;
-            Nombre= $programs[$_.ProcessName].name;
-            RAM=    [math]::round((($programs[$_.ProcessName].memory/$global:rambyte)*100.0),3);
-            CPU=    $programs[$_.ProcessName].processor;
+            PID=    $programs[$_.Name].id;
+            Nombre= $programs[$_.Name].name;
+            RAM=    [math]::round((($programs[$_.Name].memory/$global:rambyte)*100.0),3);
+            CPU=    $programs[$_.Name].processor;
         }
         New-Object -TypeName PSObject -prop $tmp;
     }  
