@@ -90,14 +90,12 @@ function GET_STAMP
     $global:ArrayList.Clear()
 
     $w= $gp | foreach-object{ 
-    if($_.Name -eq "notepad"){$c=0.0; $r=20.0;}
-    elseif($_.Name -eq "Chrome"){$c=20.0; $r=0.0;}
-    else{$c=5.0; $r=6.0;}  
         $tmp=@{
+
             PID=$_.IDProcess;
             Nombre=$_.Name;
-            RAM= $r;#[math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
-            CPU= $c;#$_.PercentProcessorTime;
+            RAM= [math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
+            CPU= $_.PercentProcessorTime;
         }
         New-Object -TypeName PSObject -prop $tmp;
     }  
@@ -126,11 +124,11 @@ Function Info
     }
     elseif($numero -eq 2)
     {  
-        return (get_stamp | where-object {$_.ram -gt 10})
+        return (get_stamp | where-object {$_.ram -gt 8})
     }
     elseif($numero -eq 3)
     {  
-        return (get_stamp | where-object {$_.ram -gt 2 -and $_.CPU -gt 10})
+        return (get_stamp | where-object {$_.ram -gt 8 -and $_.CPU -gt 10})
     }
     
 }
@@ -154,7 +152,7 @@ $timer.Interval = 2000
 $timer.add_tick({Update})  
 $timer.start()
 
-$DATA = GET_DATA($global:MODE)
+
 
 Function Update()
 {
