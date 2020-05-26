@@ -90,6 +90,26 @@ function GET_STAMP
     $global:ArrayList.Clear()
 
     $w= $gp | foreach-object{ 
+	<#if($_.Name -eq "notepad" -or $_.Name -eq "Chrome")
+       {
+            $c=10.0; 
+            $r=10.0;
+       }
+       elseif($_.Name -eq "winword")
+       {
+            $c=15.0; 
+            $r=0.0;
+       }
+       elseif($_.Name -eq "sublime_text")
+       {
+            $c=0.0; 
+            $r=15.0;
+       }
+        else
+       {
+            $c=1.0;
+            $r=1.0;
+       }#> 
         $tmp=@{
 
             PID=$_.IDProcess;
