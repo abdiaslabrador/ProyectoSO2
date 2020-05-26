@@ -126,7 +126,7 @@ Function Info
     {  
         return (get_stamp | where-object {$_.ram -gt 8})
     }
-    elseif($numero -eq 3)
+    elseif($numero -eq 4)
     {  
         return (get_stamp | where-object {$_.ram -gt 8 -and $_.CPU -gt 10})
     }
@@ -140,7 +140,7 @@ Function GET_DATA
     if($mode -eq 0){ $Object = (Info $mode);  return  $Object}  #todos los procesos
     if($mode -eq 1){ $Object = (Info $mode);  return $Object}   #procesos cpu con con uso de 10%cpu
     if($mode -eq 2){ $Object = (Info $mode);  return $Object}  #procesos memoria con consumo de 8%ram
-    if($mode -eq 3){ $Object = (Stop(Info $mode)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
+    if($mode -eq 4){ $Object = (Stop(Info $mode)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
 }
 
 $global:currentIndex=0;
