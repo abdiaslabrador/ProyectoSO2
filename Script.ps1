@@ -90,10 +90,10 @@ function GET_STAMP
     $global:ArrayList.Clear()
 
     $w= $gp | foreach-object{ 
-	<#if($_.Name -eq "notepad" -or $_.Name -eq "Chrome")
+	if($_.Name -eq "notepad" -or $_.Name -eq "Chrome")
        {
-            $c=10.0; 
-            $r=10.0;
+            $c=11.0; 
+            $r=11.0;
        }
        elseif($_.Name -eq "winword")
        {
@@ -109,13 +109,13 @@ function GET_STAMP
        {
             $c=1.0;
             $r=1.0;
-       }#> 
+       } 
         $tmp=@{
 
             PID=$_.IDProcess;
             Nombre=$_.Name;
-            RAM= [math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
-            CPU= $_.PercentProcessorTime;
+            RAM= $r; #[math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
+            CPU= $c; #$_.PercentProcessorTime;
         }
         New-Object -TypeName PSObject -prop $tmp;
     }  
@@ -146,9 +146,9 @@ Function Info
     {  
         return (get_stamp | where-object {$_.ram -gt 8})
     }
-    elseif($numero -eq 4)
+    elseif($numero -eq 3)
     {  
-        return (get_stamp | where-object {$_.ram -gt 8 -and $_.CPU -gt 10})
+        get_stamp | where-object {$_.ram -gt 8 -and $_.CPU -gt 10}
     }
     
 }
@@ -160,7 +160,7 @@ Function GET_DATA
     if($mode -eq 0){ $Object = (Info $mode);  return  $Object}  #todos los procesos
     if($mode -eq 1){ $Object = (Info $mode);  return $Object}   #procesos cpu con con uso de 10%cpu
     if($mode -eq 2){ $Object = (Info $mode);  return $Object}  #procesos memoria con consumo de 8%ram
-    if($mode -eq 4){ $Object = (Stop(Info $mode)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
+    if($mode -eq 3){ $Object = Stop((Info $mode));  return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
 }
 
 $global:currentIndex=0;
