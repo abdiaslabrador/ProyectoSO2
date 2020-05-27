@@ -74,7 +74,7 @@ $Buttonb.Add_Click({$global:MODE=3})
 $nombres_de_windows=  "powershell", "cmd","ApplicationFrameHost", "MicrosoftEdge",
 "WindowsInternal", "WinStore.App","SystemSettings", 
 "WindowsInternal.ComposableShell.Experiences.TextInput.InputApp", 
-"MicrosoftEdgeCP", "MicrosoftEdge"
+"MicrosoftEdgeCP", "MicrosoftEdge", "Video.UI", "Music.UI", "Calculator"
 $global:ArrayList = New-Object System.Collections.ArrayList
 
 $global:pwshv = ((Get-Host).Version.Major)
@@ -90,37 +90,18 @@ function GET_STAMP
     $global:ArrayList.Clear()
 
     $w= $gp | foreach-object{ 
-	if($_.Name -eq "notepad" -or $_.Name -eq "Chrome")
-       {
-            $c=11.0; 
-            $r=11.0;
-       }
-       elseif($_.Name -eq "winword")
-       {
-            $c=15.0; 
-            $r=0.0;
-       }
-       elseif($_.Name -eq "sublime_text")
-       {
-            $c=0.0; 
-            $r=15.0;
-       }
-        else
-       {
-            $c=1.0;
-            $r=1.0;
-       } 
         $tmp=@{
 
             PID=$_.IDProcess;
             Nombre=$_.Name;
-            RAM= $r; #[math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
-            CPU= $c; #$_.PercentProcessorTime;
+            RAM= [math]::round((($_.WorkingSetPrivate/$global:rambyte)*100.0),3);
+            CPU= $_.PercentProcessorTime;
         }
         New-Object -TypeName PSObject -prop $tmp;
     }  
     return $w
 }
+
 
 Function Stop
 {
@@ -148,7 +129,7 @@ Function Info
     }
     elseif($numero -eq 3)
     {  
-        get_stamp | where-object {$_.ram -gt 8 -and $_.CPU -gt 10}
+        return get_stamp | where-object {$_.ram -gt 8 -and $_.CPU -gt 10}
     }
     
 }
