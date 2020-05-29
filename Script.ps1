@@ -59,7 +59,12 @@ $main_form.Controls.Add($Buttonbu)
 $Buttonbu.Add_Click({
     $i = $texbox.CurrentRow.Index;  
     if($i -ne $null)
-    {Stop-Process ($texbox.Rows[$i].Cells[1].Value);}
+    {
+        $p = get-process | where-object {$_.Id -eq ($texbox.Rows[$i].Cells[1].Value)};
+        get-process | where-object {$_.name -eq $p.name} | Stop-Process 
+    }
+
+    
 })
 
 $Buttonb = New-Object System.Windows.Forms.Button
@@ -96,7 +101,7 @@ function GET_STAMP
                      $programs.Add(
                                     $k.Name,  @{
                                                         name = ($k.Name);
-                                                        id   = ($k.Id);
+                                                        id   = ($j.IDProcess);
                                                         memory = ($j.WorkingSetPrivate);
                                                         processor = ($j.PercentProcessorTime)
                                            }
@@ -159,8 +164,8 @@ Function GET_DATA
     param($mode)
     $Object = $null
     if($mode -eq 0){ $Object = (Info $mode);  return  $Object}  #todos los procesos
-    if($mode -eq 1){ $Object = (Info $mode); write-host "este es object " $Object; return $Object} #procesos cpu con con uso de 10%cpu
-    if($mode -eq 2){ $Object = (Info $mode); write-host "este es object " $Object; return $Object}  #procesos memoria con consumo de 8%ram
+    if($mode -eq 1){ $Object = (Info $mode);  return $Object} #procesos cpu con con uso de 10%cpu
+    if($mode -eq 2){ $Object = (Info $mode); return $Object}  #procesos memoria con consumo de 8%ram
     if($mode -eq 3){ $Object = (Stop(Info $mode)); return $Object} #eliminar los procesos con uso de 10%cpu y 8%ram del computador
 }
 
@@ -191,15 +196,12 @@ try{
    {
 
         [Collections.ArrayList]$DATA = @($DATA |Where-Object {$_.Nombre -eq $DATA.Nombre} |Select-Object Nombre, PID, RAM, CPU);
-        write-host "este es DATA " $DATA;
     }
     else
     {
-        $DATA =[Collections.ArrayList]$DATA;
-    write-host "este es DATA " $DATA;   
+        $DATA =[Collections.ArrayList]$DATA;   
     }
     $texbox.datasource = $DATA;
-    write-host "este es mode " $global:mode  "este es la data "  $texbox.datasource;
     $texbox.CurrentCell = $texbox.Rows[$global:currentIndex].Cells[0];
     $texbox.FirstDisplayedScrollingRowIndex = $currentRow;  
     $texbox.update();
